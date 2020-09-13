@@ -1,4 +1,4 @@
-# Stock
+# Stock Fundamental Analysis and Future price prediction using machine learning.
 
 The python program given below are developed with streamlit, you need to install streamlit along with Annaconda.
 
@@ -11,3 +11,4 @@ The following are the features of the program
 5. It fetches all the finanacial data of the company.
 6. This program is handy and time saver for complex analysis of a company.
 7. This program helps the user to select the stock wisely.
+8. it plots graphs for technical analysis using the indicators like RSI,MACD,ATR.
