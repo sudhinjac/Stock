@@ -2,6 +2,17 @@
 
 The python program given below are developed with streamlit, you need to install streamlit along with Annaconda.
 
+Packages Required
+
+Annaconda python 3.7
+
+pip install streamlit
+pip install nse
+pip install pandas
+pip install scipy
+pip install sklearn
+pip install numpy
+
 The following are the features of the program
 
 1. The BSE1.py when you run this file using streamlit run BSE1.py it opens a browser and it will allow you to input ticker use ticker.BO for BSE and .NS for NSE. For example a company ticker is "SUYOG"  so input "SUYOG.BO" in the input field.
