@@ -33,7 +33,7 @@ from scipy.stats import norm
 
      
 
-dfticker = pd.read_csv("C:\\STOCK\\LATSTOCK.csv",index_col=False,encoding= 'unicode_escape')
+dfticker = pd.read_csv("LATSTOCK.csv",index_col=False,encoding= 'unicode_escape')
 
 dfticker['Security Name'] = dfticker['Security Name'].str.upper()
 #MSFT_beta
