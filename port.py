@@ -528,7 +528,7 @@ def key_fianancials(ticker):
     import requests
     from bs4 import BeautifulSoup
 
-    url = "https://finance.yahoo.com/quote/AARTIIND.NS/key-statistics?p="+ticker
+    url = "https://finance.yahoo.com/quote/"+ticker+ "/key-statistics?p="+ticker
 
     headers = {
         "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0"
