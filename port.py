@@ -41,7 +41,7 @@ import requests
 import numpy as np
 import pandas as pd
 import os
-import talib
+#import talib
 import datetime
 import pandas as pd
 import yfinance as yf
@@ -749,8 +749,8 @@ st.subheader("Volume")
 st.bar_chart(df['Volume'])
 
 st.subheader("Candlestick Trend")
-d1 = candle_trend(df, patterns)
-st.dataframe(d1)
+#d1 = candle_trend(df, patterns)
+#st.dataframe(d1)
 
 st.subheader("Candlestick Chart")
 st.plotly_chart(fig)
