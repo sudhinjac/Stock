@@ -8,5 +8,5 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     git \
     && rm -rf /var/lib/apt/lists/*
-EXPOSE 8501
-ENTRYPOINT ["streamlit", "run", "port.py", "--server.port=8501", "--server.address=0.0.0.0"] 
+EXPOSE $PORT
+ENTRYPOINT ["streamlit", "run", "port.py", "--server.port=$PORT", "--server.address=0.0.0.0"] 
