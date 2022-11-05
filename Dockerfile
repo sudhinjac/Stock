@@ -8,6 +8,6 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     git \
     && rm -rf /var/lib/apt/lists/*
-EXPOSE 8501
-ENTRYPOINT ["streamlit", "run", "test.py", "--server.port=8501", "--server.address=0.0.0.0"]
-
+EXPOSE $PORT
+CMD gunicorn --workers=4 --bind 0.0.0.0:$PORT
+CMD streamlit run test.py --server.port $PORT
