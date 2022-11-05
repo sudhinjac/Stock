@@ -10,4 +10,4 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 EXPOSE $PORT
 CMD gunicorn --workers=4 --bind 0.0.0.0:$PORT
-CMD streamlit run port.py --server.port $PORT
+CMD streamlit run port1.py --server.port $PORT
