@@ -187,7 +187,7 @@ def signals(dfnew):
 
 
 df = pd.DataFrame()
-df = yf.download(ticker, period='4y')
+df = yf.download(ticker, period='2y')
 
 
 
@@ -211,7 +211,7 @@ st.header("Trading Signals")
 signals(df)
 def monte_carlo(ticker):
     data = pd.DataFrame()
-    data[ticker] = yf.download(ticker, period='4y')['Adj Close']
+    data[ticker] = yf.download(ticker, period='2y')['Adj Close']
     log_returns = np.log(1 + data.pct_change())
     u = log_returns.mean()
     var = log_returns.var()

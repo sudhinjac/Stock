@@ -41,7 +41,7 @@ import requests
 import numpy as np
 import pandas as pd
 import os
-#import talib
+import talib
 import datetime
 import pandas as pd
 import yfinance as yf
@@ -63,7 +63,7 @@ import pandas_datareader
 import datetime
 import pandas_datareader.data as web
 from scipy.stats import norm
-
+import pandas_ta as ta
 
 
 patterns = {
@@ -251,7 +251,9 @@ def signals(dfnew):
 df = pd.DataFrame()
 df = yf.download(ticker, period='4y')
 
-
+start = datetime.datetime(2017, 1, 1)
+dfp = web.DataReader(ticker, 'yahoo', start)
+dfp.to_csv(ticker+".csv")
 
 cal_data(tickers)
 
@@ -695,12 +697,82 @@ def OBV(DF):
 
 df = MACD(df, 12, 26, 9)
 
-temp1 =RSI(df,30)
+temp1 =RSI(df,14)
 st.header("RSI Chart")
-st.line_chart(temp1.tail(200))
-st.header("MACD Chart")
-st.line_chart(df[["MACD","Signal"]].tail(200))
+fig = temp1.plot()
+st.plotly_chart(fig)
 
+st.header("MACD Chart")
+
+fig = df[["MACD","Signal"]].plot()
+st.plotly_chart(fig)
+
+def bb_strategy(df):
+    
+    # variables
+    
+    bb_buy = []
+    bb_sell = []
+    position = False
+    
+    bb = ta.bbands(df['Adj Close'], length=20,std=2)
+    
+    df = pd.concat([df, bb], axis=1).reindex(df.index)
+
+    for i in range(len(df)):
+        
+        # Buy Signal
+        
+        if df['Adj Close'][i] < df['BBL_20_2.0'][i]:
+            if position == False :
+                bb_buy.append(df['Adj Close'][i])
+                bb_sell.append(np.nan)
+                position = True
+            else:
+                bb_buy.append(np.nan)
+                bb_sell.append(np.nan)
+        
+        # Sell Signal
+        
+        elif df['Adj Close'][i] > df['BBU_20_2.0'][i]:
+            if position == True:
+                bb_buy.append(np.nan)
+                bb_sell.append(df['Adj Close'][i])
+                position = False #To indicate that I actually went there
+            else:
+                bb_buy.append(np.nan)
+                bb_sell.append(np.nan)
+        else :
+            bb_buy.append(np.nan)
+            bb_sell.append(np.nan)
+
+    df['bb_buy_signal_price'] = bb_buy
+    df['bb_sell_signal_price'] = bb_sell
+
+    return df
+df = bb_strategy(df)
+fig, ax1 = plt.subplots(figsize=(14,8))
+fig.suptitle(ticker, fontsize=10, backgroundcolor='blue', color='white')
+
+ax1 = plt.subplot2grid((14, 8), (0, 0), rowspan=8, colspan=14)
+ax2 = plt.subplot2grid((14, 12), (10, 0), rowspan=6, colspan=14)
+ax1.set_ylabel('Price')
+ax1.plot(df['Adj Close'],label='Close Price', linewidth=0.5, color='blue')
+ax1.scatter(df.index, df['bb_buy_signal_price'], color='green', marker='^', alpha=1)
+ax1.scatter(df.index, df['bb_sell_signal_price'], color='red', marker='v', alpha=1)
+ax1.legend()
+ax1.grid()
+ax1.set_xlabel('Date', fontsize=8)
+
+ax2.plot(df['BBM_20_2.0'], label='Middle', color='blue', alpha=0.35) #middle band
+ax2.plot(df['BBU_20_2.0'], label='Upper', color='green', alpha=0.35) #Upper band
+ax2.plot(df['BBL_20_2.0'], label='Lower', color='red', alpha=0.35) #lower band
+ax2.fill_between(df.index, df['BBL_20_2.0'], df['BBU_20_2.0'], alpha=0.1)
+ax2.legend(loc='upper left')
+ax2.grid()
+plt.show()
+st.header("Bolliger Band Strategy")
+st.pyplot(fig)
 
 def candle_trend(df, patterns):
     data = pd.DataFrame(columns=['Candle-Pattern', 'Definition', 'Signal'])
@@ -731,9 +803,29 @@ fig = go.Figure(
         high=df['High'],
         low=df['Low'],
         close=df['Close'],
-        increasing_line_color='green',
-        decreasing_line_color='red'
+        line=dict(width=1), opacity=1,
+    increasing_fillcolor='#24A06B',
+    decreasing_fillcolor="#CC2E3C",
+    increasing_line_color='#2EC886',  
+    decreasing_line_color='#FF3A4C'
     )]
+)
+fig.update_yaxes(
+    gridcolor="#1f292f"
+)
+fig.update_xaxes(
+    gridcolor="#1f292f",
+    rangeslider=dict(visible=False),
+    nticks=5
+)
+
+fig.update_layout(
+    width=900,
+    height=400,
+    margin=dict(l=10,r=10,b=10,t=10),
+    paper_bgcolor="#2c303c",
+    plot_bgcolor="#2c303c",
+    font=dict(size=8, color="#e1e1e1")
 )
 
 st.subheader("Historical Prices")
@@ -749,11 +841,15 @@ st.subheader("Volume")
 st.bar_chart(df['Volume'])
 
 st.subheader("Candlestick Trend")
-#d1 = candle_trend(df, patterns)
-#st.dataframe(d1)
+d1 = candle_trend(df, patterns)
+st.dataframe(d1)
 
 st.subheader("Candlestick Chart")
 st.plotly_chart(fig)
+
+df['EWMA12'] = df['Close'].ewm(span=12,adjust=False).mean()
+df['12-month-SMA'] = df['Close'].rolling(window=12).mean()
+st.line_chart(df[['Close','EWMA12','12-month-SMA']])
 
 def garch(stock_data):
     import math
@@ -803,29 +899,57 @@ def garch(stock_data):
     plt.plot(rolling_predictions)
     plt.title('Rolling Prediction')
     plt.show()
+    st.header("Volatility Predictions using GARCH")
     st.line_chart(rolling_predictions)
 
 
 garch(df)
 
+dfp = pd.read_csv(ticker+".csv", index_col = False)
+#df.set_index('Date', inplace=True)
+dfp['Date'] = dfp['Date'].apply(pd.to_datetime)
+dfp.set_index('Date', inplace=True)
+dfp =df.resample(rule='M').mean()
+dfp =df.dropna()
+
 def holt_wint(df):
+ 
 
     from statsmodels.tsa.holtwinters import ExponentialSmoothing
-    train_data = df.iloc[:-8]# Goes up to but not including 108
-    test_data = df.iloc[-8:]
+    train_data = df.iloc[:-3]# Goes up to but not including 108
+    test_data = df.iloc[-3:]
     fitted_model = ExponentialSmoothing(train_data['Close'],trend='mul',seasonal='mul',seasonal_periods=12).fit()
     test_predictions= fitted_model.forecast(12).rename('HW Forecast')
-    train_data['Close'].plot(legend=True,label='TRAIN')
-    test_data['Close'].plot(legend=True,label='TEST',figsize=(12,8))
-    test_predictions.plot(legend=True,label='PREDICTION');
+   # train_data['Close'].plot(legend=True,label='TRAIN')
+    #test_data['Close'].plot(legend=True,label='TEST',figsize=(12,8))
+    #test_predictions.plot(legend=True,label='PREDICTION');
     from sklearn.metrics import mean_squared_error,mean_absolute_error
     final_model = ExponentialSmoothing(df['Close'],trend='mul',seasonal='mul',seasonal_periods=12).fit()
     forecast_predictions = fitted_model.forecast(36).rename('HW Forecast')
-    st.dataframe(forecast_predictions,900,100)
-holt_wint(df)
+    st.dataframe(forecast_predictions,800,300)
+st.header("HOTLZ Winter Time Series Prediction")
+holt_wint(dfp)
 
-df['EWMA12'] = df['Close'].ewm(span=12,adjust=False).mean()
-df['12-month-SMA'] = df['Close'].rolling(window=12).mean()
-st.line_chart(df[['Close','EWMA12','12-month-SMA']])
-st.write("Done")
-st.write("Done")
+
+def arima(df):
+    import statsmodels.api as sm
+    from statsmodels.tsa.arima.model import ARIMA
+    model = ARIMA(df['Close'], order=(2, 0, 0))  
+    results_AR = model.fit()
+    length = len(df)
+    fcast202 = results_AR.predict(start = length, end = length+12, dynamic = True )
+    st.dataframe(fcast202,800,300)
+
+st.header("ARIMA Predictions")
+arima(dfp)
+gme = yf.Ticker(ticker)
+st.header("Major Share Holders")
+st.dataframe(gme.major_holders,800,500)
+st.header("Institutional Investors")
+st.dataframe(gme.institutional_holders,800,500)
+st.header("Recomendations")
+st.dataframe(gme.recommendations,800,500)
+st.header("Infomration about  "+ticker)
+st.write(gme.info)
+st.header("News about  "+ticker)
+st.write(gme.news)
